@@ -5,6 +5,7 @@ export const PageStore = types
     icon: '',
     path: '',
     label: '',
+    show: true,
     schema: types.frozen({})
   })
   .views(self => ({}))

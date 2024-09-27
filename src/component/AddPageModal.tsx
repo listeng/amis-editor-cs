@@ -19,7 +19,7 @@ export default schema2component(
 
         {
           type: 'text',
-          label: '路径',
+          label: '代码',
           name: 'path',
           validations: {
             isUrlPath: true
@@ -29,14 +29,8 @@ export default schema2component(
             const exists = !!values.pages.filter(
               (item: any) => item.path === value
             ).length;
-            return exists ? '当前路径已被占用，请换一个' : '';
+            return exists ? '当前代码已被占用，请换一个' : '';
           }
-        },
-
-        {
-          type: 'icon-picker',
-          label: '图标',
-          name: 'icon'
         }
       ]
     }

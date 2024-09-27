@@ -201,7 +201,8 @@ export function schema2component(
           alert: store.alert,
           copy: store.copy,
           propsTransform: transform,
-          theme: store.theme
+          theme: store.theme,
+          // responseAdaptor: store.responseAdaptor
         },
         this.getEnv()
       );

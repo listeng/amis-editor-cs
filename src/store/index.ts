@@ -1,22 +1,53 @@
-import {types, getEnv, applySnapshot, getSnapshot} from 'mobx-state-tree';
+import {types, getEnv, applySnapshot, getSnapshot, flow} from 'mobx-state-tree';
 import {PageStore} from './Page';
 import {when, reaction} from 'mobx';
 let pagIndex = 1;
+const baseUrl = '..';
+
+async function authenticatedFetch(
+  url: string,
+  options: RequestInit & {
+    headers?: HeadersInit;
+    method?: string;
+    body?: any;
+  } = {}
+) {
+  const authData = localStorage.getItem('pb_admin_auth');
+  let token = '';
+  if (authData) {
+    try {
+      const parsedData = JSON.parse(authData);
+      token = parsedData.token;
+    } catch (e) {
+      alert('没有登录');
+    }
+  }
+
+  const headers = new Headers(options.headers || {});
+  headers.set('Authorization', token);
+
+  // 如果是 POST 请求，默认设置 Content-Type 为 application/json
+  if (options.method === 'POST' && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers: headers,
+    method: options.method || 'GET' // 默认为 GET
+  };
+
+  // 如果有 body 且是对象，将其转换为 JSON 字符串
+  if (options.body && typeof options.body === 'object') {
+    fetchOptions.body = JSON.stringify(options.body);
+  }
+
+  return fetch(url, fetchOptions);
+}
+
 export const MainStore = types
   .model('MainStore', {
-    pages: types.optional(types.array(PageStore), [
-      {
-        id: `${pagIndex}`,
-        path: 'hello-world',
-        label: 'Hello world',
-        icon: 'fa fa-file',
-        schema: {
-          type: 'page',
-          title: 'Hello world',
-          body: '初始页面'
-        }
-      }
-    ]),
+    pages: types.optional(types.array(PageStore), []),
     theme: 'cxd',
     asideFixed: true,
     asideFolded: false,
@@ -38,6 +69,9 @@ export const MainStore = types
     },
     get copy() {
       return getEnv(self).copy;
+    },
+    get responseAdaptor() {
+      return getEnv(self).responseAdaptor;
     }
   }))
   .actions(self => {
@@ -57,27 +91,73 @@ export const MainStore = types
       self.addPageIsOpen = isOpened;
     }
 
-    function addPage(data: {
+    const addPage = flow(function* (data: {
       label: string;
       path: string;
       icon?: string;
       schema?: any;
     }) {
-      self.pages.push(
-        PageStore.create({
-          ...data,
-          id: `${++pagIndex}`
-        })
-      );
-    }
+      try {
+        const response = yield authenticatedFetch(
+          baseUrl + '/api/collections/Page/records',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              remark: data.label,
+              name: data.path,
+              ctype: 'page',
+              config: data.schema
+            })
+          }
+        );
 
-    function removePageAt(index: number) {
-      self.pages.splice(index, 1);
-    }
+        loadPages();
+      } catch (error) {
+        console.error('Failed to fetch data', error);
+      }
+    });
 
-    function updatePageSchemaAt(index: number) {
+    const removePageAt = flow(function* (index: number) {
+      try {
+        const response = yield authenticatedFetch(
+          baseUrl + '/api/collections/Page/records/' + self.pages[index].id,
+          {
+            method: 'DELETE'
+          }
+        );
+
+        loadPages();
+      } catch (error) {
+        console.error('Failed to fetch data', error);
+      }
+    });
+
+    const updatePageSchemaAt = flow(function* (index: number) {
       self.pages[index].updateSchema(self.schema);
-    }
+
+      const data = self.pages[index];
+
+      try {
+        const response = yield authenticatedFetch(
+          baseUrl + '/api/collections/Page/records/' + data.id,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            method: 'PATCH',
+            body: JSON.stringify({
+              remark: data.label,
+              name: data.path,
+              show: data.show,
+              ctype: 'page',
+              config: JSON.stringify(self.schema)
+            })
+          }
+        );
+
+        loadPages();
+      } catch (error) {
+        console.error('Failed to fetch data', error);
+      }
+    });
 
     function updateSchema(value: any) {
       self.schema = value;
@@ -91,6 +171,32 @@ export const MainStore = types
       self.isMobile = value;
     }
 
+    const loadPages = flow(function* () {
+      try {
+        const response = yield authenticatedFetch(
+          baseUrl + '/api/collections/Page/records?filter=ctype="page"'
+        );
+        const data = yield response.json();
+
+        self.pages.clear();
+        if (data.items && data.items.length > 0) {
+          for (let i = 0; i < data.items.length; i++) {
+            self.pages.push(
+              PageStore.create({
+                label: data.items[i].remark,
+                path: data.items[i].name,
+                schema: data.items[i].config,
+                show: data.items[i].show,
+                id: data.items[i].id
+              })
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch data', error);
+      }
+    });
+
     return {
       toggleAsideFolded,
       toggleAsideFixed,
@@ -102,20 +208,7 @@ export const MainStore = types
       updateSchema,
       setPreview,
       setIsMobile,
-      afterCreate() {
-        // persist store
-        if (typeof window !== 'undefined' && window.localStorage) {
-          const storeData = window.localStorage.getItem('store');
-          if (storeData) applySnapshot(self, JSON.parse(storeData));
-
-          reaction(
-            () => getSnapshot(self),
-            json => {
-              window.localStorage.setItem('store', JSON.stringify(json));
-            }
-          );
-        }
-      }
+      loadPages
     };
   });
 

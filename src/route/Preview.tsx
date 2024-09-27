@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {observer, inject} from 'mobx-react';
 import {IMainStore} from '../store';
 import {Button, AsideNav, Layout, confirm} from 'amis';
@@ -24,20 +24,21 @@ export default inject('store')(
     location,
     history
   }: {store: IMainStore} & RouteComponentProps) {
+    useEffect(() => {
+      store.loadPages();
+    }, [store]);
+
     function renderHeader() {
       return (
         <>
           <div className={`cxd-Layout-brandBar`}>
             <div className="cxd-Layout-brand text-ellipsis">
               <i className="fa fa-paw"></i>
-              <span className="hidden-folded m-l-sm">AMIS 示例</span>
+              <span className="hidden-folded m-l-sm">页面编辑器</span>
             </div>
           </div>
           <div className={`cxd-Layout-headerBar`}>
             <div className="hidden-xs p-t-sm ml-auto px-2">
-              <Button size="sm" className="m-r-xs" level="success" disabled>
-                全部导出
-              </Button>
               <Button
                 size="sm"
                 level="info"
@@ -64,7 +65,7 @@ export default inject('store')(
           key={store.asideFolded ? 'folded-aside' : 'aside'}
           navigations={[
             {
-              label: '导航',
+              label: '页面列表',
               children: navigations
             }
           ]}
@@ -114,21 +115,20 @@ export default inject('store')(
               );
             }
 
-            link.active ||
-              children.push(
-                <i
-                  key="delete"
-                  data-tooltip="删除"
-                  data-position="bottom"
-                  className={'navbtn fa fa-times'}
-                  onClick={(e: React.MouseEvent) => {
-                    e.preventDefault();
-                    confirm('确认要删除').then(confirmed => {
-                      confirmed && store.removePageAt(paths.indexOf(link.path));
-                    });
-                  }}
-                />
-              );
+            children.push(
+              <i
+                key="delete"
+                data-tooltip="删除"
+                data-position="bottom"
+                className={'navbtn fa fa-times'}
+                onClick={(e: React.MouseEvent) => {
+                  e.preventDefault();
+                  confirm('确认要删除').then(confirmed => {
+                    confirmed && store.removePageAt(paths.indexOf(link.path));
+                  });
+                }}
+              />
+            );
 
             children.push(
               <i

@@ -23,7 +23,6 @@ export default observer(function ({store}: {store: IMainStore}) {
           fallback={<Spinner overlay className="m-t-lg" size="lg" />}
         >
           <Switch>
-            <Redirect to={`/hello-world`} from={`/`} exact />
             <Route path="/edit/:id" component={Editor} />
             <Route component={Preview} />
           </Switch>

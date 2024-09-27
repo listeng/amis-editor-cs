@@ -15,6 +15,9 @@ export default function (): JSX.Element {
         config.headers = config.headers || headers || {};
         config.withCredentials = true;
 
+        // @ts-ignore
+        config.headers['Authorization'] = getAuthToken();
+
         if (method !== 'post' && method !== 'put' && method !== 'patch') {
           if (data) {
             config.params = data;
@@ -33,7 +36,22 @@ export default function (): JSX.Element {
           config.headers['Content-Type'] = 'application/json';
         }
 
-        return (axios as any)[method](url, data, config);
+        return (axios as any)[method](url, data, config)
+        .then((response:any) => response.json())
+        .then((payload:any) => {
+          if (url.indexOf('auth-with-password') > 0) {
+            return payload;
+          } else {
+            return {
+              status: payload.code || 0,
+              msg: payload.messages || '',
+              data: {
+                items: payload.items,
+                total: payload.totalItems
+              }
+            };
+          };
+        });
       },
       isCancel: (e: any) => axios.isCancel(e),
       notify: (type: 'success' | 'error' | 'info', msg: string) => {
@@ -50,6 +68,20 @@ export default function (): JSX.Element {
           (!options || options.shutup !== true) &&
           toast.info('内容已拷贝到剪切板');
         return ret;
+      },
+      responseAdaptor: (api: any, payload: any, query: any, request: any, response: any) => {
+        if (request.url.indexOf('auth-with-password') > 0) {
+          return payload;
+        } else {
+          return {
+            status: payload.code || 0,
+            msg: payload.messages || '',
+            data: {
+              items: payload.items,
+              total: payload.totalItems
+            }
+          };
+        }
       }
     }
   ));
