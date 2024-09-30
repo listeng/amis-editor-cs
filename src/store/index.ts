@@ -2,7 +2,7 @@ import {types, getEnv, applySnapshot, getSnapshot, flow} from 'mobx-state-tree';
 import {PageStore} from './Page';
 import {when, reaction} from 'mobx';
 let pagIndex = 1;
-const baseUrl = '..';
+const baseUrl = '..';//'http://127.0.0.1:8090/pb-proxy';
 
 async function authenticatedFetch(
   url: string,
@@ -159,6 +159,37 @@ export const MainStore = types
       }
     });
 
+    const getPageById = flow(function* (id: string) {
+      try {
+        const response = yield authenticatedFetch(
+          baseUrl + '/api/collections/Page/records/' + id,
+          {
+            method: 'GET'
+          }
+        );
+
+        const result = yield response.json();
+
+        console.log(result);
+
+        self.pages.clear();
+        self.pages.push(
+          PageStore.create({
+            label: result.remark,
+            path: result.name,
+            schema: result.config,
+            show: result.show,
+            id: result.id
+          })
+        );
+
+        updateSchema(result.config);
+
+      } catch (error) {
+        console.error('Failed to fetch data', error);
+      }
+    });
+
     function updateSchema(value: any) {
       self.schema = value;
     }
@@ -208,7 +239,8 @@ export const MainStore = types
       updateSchema,
       setPreview,
       setIsMobile,
-      loadPages
+      loadPages,
+      getPageById
     };
   });
 
