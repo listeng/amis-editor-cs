@@ -201,8 +201,7 @@ export function schema2component(
           alert: store.alert,
           copy: store.copy,
           propsTransform: transform,
-          theme: store.theme,
-          // responseAdaptor: store.responseAdaptor
+          theme: store.theme
         },
         this.getEnv()
       );
@@ -214,4 +213,16 @@ export function schema2component(
   return withRouter(SchemaRenderer);
 }
 
-export default schema2component({type: 'page', body: 'It works'});
+export default schema2component({
+  type: 'page',
+  body: {
+    type: 'page',
+    body: [
+      {
+        type: 'spinner',
+        show: true,
+        tip: '加载中...'
+      }
+    ]
+  }
+});

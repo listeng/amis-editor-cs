@@ -13,45 +13,68 @@ export default function (): JSX.Element {
       fetcher: ({url, method, data, config, headers}: any) => {
         config = config || {};
         config.headers = config.headers || headers || {};
-        config.withCredentials = true;
+        // config.withCredentials = true;
 
         // @ts-ignore
         config.headers['Authorization'] = getAuthToken();
+
+        let resp = null;
 
         if (method !== 'post' && method !== 'put' && method !== 'patch') {
           if (data) {
             config.params = data;
           }
-          return (axios as any)[method](url, config);
-        } else if (data && data instanceof FormData) {
-          // config.headers = config.headers || {};
-          // config.headers['Content-Type'] = 'multipart/form-data';
-        } else if (
-          data &&
-          typeof data !== 'string' &&
-          !(data instanceof Blob) &&
-          !(data instanceof ArrayBuffer)
-        ) {
-          data = JSON.stringify(data);
-          config.headers['Content-Type'] = 'application/json';
+
+          resp = (axios as any)[method](url, config);
+        } else {
+          if (data && data instanceof FormData) {
+            config.headers['Content-Type'] = 'multipart/form-data';
+          } else if (
+            data &&
+            typeof data !== 'string' &&
+            !(data instanceof Blob) &&
+            !(data instanceof ArrayBuffer)
+          ) {
+            data = JSON.stringify(data);
+            config.headers['Content-Type'] = 'application/json';
+          }
+
+          resp = (axios as any)[method](url, data, config);
         }
 
-        return (axios as any)[method](url, data, config)
-        .then((response:any) => response.json())
-        .then((payload:any) => {
-          if (url.indexOf('auth-with-password') > 0) {
-            return payload;
-          } else {
-            return {
-              status: payload.code || 0,
-              msg: payload.messages || '',
-              data: {
-                items: payload.items,
-                total: payload.totalItems
+        if (resp) {
+          return resp
+            .then((response: any) => {
+              if (response.status === 204) {
+                return {
+                  code: 0,
+                  messages: '操作成功'
+                };
               }
-            };
-          };
-        });
+              return response.data;
+            })
+            .then((payload: any) => {
+              if (url.indexOf('auth-with-password') > 0) {
+                return payload;
+              } else {
+                const result: any = {
+                  status: payload.code || 0,
+                  msg: payload.messages || '操作成功'
+                };
+
+                if (payload.items !== undefined) {
+                  result.data = {
+                    items: payload.items,
+                    total: payload.totalItems
+                  };
+                } else {
+                  result.data = {};
+                }
+
+                return result;
+              }
+            });
+        }
       },
       isCancel: (e: any) => axios.isCancel(e),
       notify: (type: 'success' | 'error' | 'info', msg: string) => {
@@ -68,20 +91,6 @@ export default function (): JSX.Element {
           (!options || options.shutup !== true) &&
           toast.info('内容已拷贝到剪切板');
         return ret;
-      },
-      responseAdaptor: (api: any, payload: any, query: any, request: any, response: any) => {
-        if (request.url.indexOf('auth-with-password') > 0) {
-          return payload;
-        } else {
-          return {
-            status: payload.code || 0,
-            msg: payload.messages || '',
-            data: {
-              items: payload.items,
-              total: payload.totalItems
-            }
-          };
-        }
       }
     }
   ));

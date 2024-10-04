@@ -12,6 +12,8 @@ import {IMainStore} from '../store/index';
 import '../renderer/MyRenderer';
 const Preview = React.lazy(() => import('./Preview'));
 const Editor = React.lazy(() => import('./Editor'));
+const Page = React.lazy(() => import('./Page'));
+const NotFound = React.lazy(() => import('./NotFound'));
 
 export default observer(function ({store}: {store: IMainStore}) {
   return (
@@ -23,8 +25,10 @@ export default observer(function ({store}: {store: IMainStore}) {
           fallback={<Spinner overlay className="m-t-lg" size="lg" />}
         >
           <Switch>
+            <Route path="/page/:id" component={Page} />
             <Route path="/edit/:id" component={Editor} />
-            <Route component={Preview} />
+            <Route path="/editor" component={Preview} />
+            <Route component={NotFound} />
           </Switch>
         </React.Suspense>
       </div>

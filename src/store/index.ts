@@ -2,7 +2,7 @@ import {types, getEnv, applySnapshot, getSnapshot, flow} from 'mobx-state-tree';
 import {PageStore} from './Page';
 import {when, reaction} from 'mobx';
 let pagIndex = 1;
-const baseUrl = '/pb-proxy';//'http://127.0.0.1:8090/pb-proxy';
+const baseUrl = 'http://127.0.0.1:8090/pb-proxy'; //'/pb-proxy';//'http://127.0.0.1:8090/pb-proxy';
 
 async function authenticatedFetch(
   url: string,
@@ -141,7 +141,7 @@ export const MainStore = types
         const response = yield authenticatedFetch(
           baseUrl + '/api/collections/Page/records/' + data.id,
           {
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             method: 'PATCH',
             body: JSON.stringify({
               remark: data.label,
@@ -170,8 +170,6 @@ export const MainStore = types
 
         const result = yield response.json();
 
-        console.log(result);
-
         self.pages.clear();
         self.pages.push(
           PageStore.create({
@@ -183,10 +181,25 @@ export const MainStore = types
           })
         );
 
-        updateSchema(result.config);
+        document.title = result.remark;
 
+        updateSchema(result.config);
       } catch (error) {
         console.error('Failed to fetch data', error);
+
+        self.pages.clear();
+        self.pages.push(
+          PageStore.create({
+            label: '没有找到页面',
+            schema: {},
+            show: false,
+            id: '-'
+          })
+        );
+
+        document.title = '没有找到页面';
+
+        updateSchema({type: 'page', body: '没有找到页面'});
       }
     });
 
