@@ -55,7 +55,7 @@ export default function (): JSX.Element {
             })
             .then((payload: any) => {
               if (url.indexOf('auth-with-password') > 0) {
-                return payload;
+                return {data: payload};
               } else {
                 const result: any = {
                   status: payload.code || 0,
@@ -71,7 +71,7 @@ export default function (): JSX.Element {
                   result.data = {};
                 }
 
-                return result;
+                return {data: result};
               }
             });
         }

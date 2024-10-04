@@ -2,7 +2,7 @@ import {types, getEnv, applySnapshot, getSnapshot, flow} from 'mobx-state-tree';
 import {PageStore} from './Page';
 import {when, reaction} from 'mobx';
 let pagIndex = 1;
-const baseUrl = 'http://127.0.0.1:8090/pb-proxy'; //'/pb-proxy';//'http://127.0.0.1:8090/pb-proxy';
+const baseUrl = '/pb-proxy'; //'/pb-proxy';//'http://127.0.0.1:8090/pb-proxy';
 
 async function authenticatedFetch(
   url: string,
