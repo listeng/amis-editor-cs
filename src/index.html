@@ -115,6 +115,13 @@
           } catch {}
         }
 
+        const pocketbase_auth = localStorage.getItem('pocketbase_auth');
+        if (pocketbase_auth) {
+          try {
+            return JSON.parse(pocketbase_auth).token;
+          } catch {}
+        }
+
         const pb_token = localStorage.getItem('pb_token');
         if (pb_token) {
           return pb_token;
