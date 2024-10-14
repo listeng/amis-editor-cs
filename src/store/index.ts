@@ -1,8 +1,9 @@
 import {types, getEnv, applySnapshot, getSnapshot, flow} from 'mobx-state-tree';
 import {PageStore} from './Page';
 import {when, reaction} from 'mobx';
+import { boolean } from 'mobx-state-tree/dist/internal';
 let pagIndex = 1;
-const baseUrl = '/pb-proxy'; //'/pb-proxy';//'http://127.0.0.1:8090/pb-proxy';
+const baseUrl = 'http://127.0.0.1:8090/pb-proxy'; //'/pb-proxy';//'http://127.0.0.1:8090/pb-proxy';
 
 async function authenticatedFetch(
   url: string,
@@ -55,6 +56,8 @@ export const MainStore = types
     addPageIsOpen: false,
     preview: false,
     isMobile: false,
+    isFirstLoad: false,
+    isModified: false,
     schema: types.frozen()
   })
   .views(self => ({
@@ -91,120 +94,125 @@ export const MainStore = types
       self.addPageIsOpen = isOpened;
     }
 
-    const addPage = flow(function* (data: {
-      label: string;
-      path: string;
-      icon?: string;
-      schema?: any;
-    }) {
-      try {
-        const response = yield authenticatedFetch(
-          baseUrl + '/api/collections/Page/records',
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              remark: data.label,
-              name: data.path,
-              ctype: 'page',
-              config: data.schema
-            })
-          }
-        );
+    const updatePageSchemaAt = flow(function* (id: string) {
+      if (self.pages[0].id === id) {
+        const data = self.pages[0];
 
-        loadPages();
-      } catch (error) {
-        console.error('Failed to fetch data', error);
+        try {
+          const response = yield authenticatedFetch(
+            baseUrl + '/api/collections/Page/records/' + data.id,
+            {
+              headers: {'Content-Type': 'application/json'},
+              method: 'PATCH',
+              body: JSON.stringify({
+                remark: data.label,
+                name: data.path,
+                show: data.show,
+                ctype: 'page',
+                config: JSON.stringify(data.schema)
+              })
+            }
+          );
+
+          const result = yield response.json();
+          if (result.id === id) {
+            localStorage.removeItem(data.id + '-schema-dirty');
+            return true;
+          } else {
+            return false;
+          }
+        } catch (error) {
+          console.error('Failed to fetch data', error);
+          return false;
+        }
+      } else {
+        return false;
       }
     });
 
-    const removePageAt = flow(function* (index: number) {
-      try {
-        const response = yield authenticatedFetch(
-          baseUrl + '/api/collections/Page/records/' + self.pages[index].id,
-          {
-            method: 'DELETE'
-          }
-        );
-
-        loadPages();
-      } catch (error) {
-        console.error('Failed to fetch data', error);
+    const getPageById = flow(function* (id: string, isForce: boolean) {
+      if (isForce) {
+        localStorage.removeItem(id + '-schema');
+        localStorage.removeItem(id + '-schema-dirty');
       }
-    });
 
-    const updatePageSchemaAt = flow(function* (index: number) {
-      self.pages[index].updateSchema(self.schema);
+      let dataLocal = localStorage.getItem(id + '-schema');
+      let dataLocalDirty = localStorage.getItem(id + '-schema-dirty');
+      if (dataLocal != null && dataLocalDirty == '1') {
 
-      const data = self.pages[index];
-
-      try {
-        const response = yield authenticatedFetch(
-          baseUrl + '/api/collections/Page/records/' + data.id,
-          {
-            headers: {'Content-Type': 'application/json'},
-            method: 'PATCH',
-            body: JSON.stringify({
-              remark: data.label,
-              name: data.path,
-              show: data.show,
-              ctype: 'page',
-              config: JSON.stringify(self.schema)
-            })
-          }
-        );
-
-        loadPages();
-      } catch (error) {
-        console.error('Failed to fetch data', error);
-      }
-    });
-
-    const getPageById = flow(function* (id: string) {
-      try {
-        const response = yield authenticatedFetch(
-          baseUrl + '/api/collections/Page/records/' + id,
-          {
-            method: 'GET'
-          }
-        );
-
-        const result = yield response.json();
+        const result = JSON.parse(dataLocal);
 
         self.pages.clear();
-        self.pages.push(
-          PageStore.create({
-            label: result.remark,
-            path: result.name,
-            schema: result.config,
-            show: result.show,
-            id: result.id
-          })
-        );
+        self.pages.push(PageStore.create(result));
 
-        document.title = result.remark;
+        self.isFirstLoad = true;
+        document.title = result.label;
+        self.schema = result.schema;
 
-        updateSchema(result.config);
-      } catch (error) {
-        console.error('Failed to fetch data', error);
+        return 'dirty';
+      } else {
+        try {
+          const response = yield authenticatedFetch(
+            baseUrl + '/api/collections/Page/records/' + id,
+            {
+              method: 'GET'
+            }
+          );
 
-        self.pages.clear();
-        self.pages.push(
-          PageStore.create({
-            label: '没有找到页面',
-            schema: {},
-            show: false,
-            id: '-'
-          })
-        );
+          const result = yield response.json();
 
-        document.title = '没有找到页面';
+          self.pages.clear();
+          self.pages.push(
+            PageStore.create({
+              label: result.remark,
+              path: result.name,
+              schema: result.config,
+              show: result.show,
+              dirty: '',
+              id: result.id
+            })
+          );
 
-        updateSchema({type: 'page', body: '没有找到页面'});
+          self.isFirstLoad = true;
+          document.title = result.remark;
+          self.schema = result.config;
+
+          return 'loaded';
+        } catch (error) {
+          console.error('Failed to fetch data', error);
+
+          self.pages.clear();
+          self.pages.push(
+            PageStore.create({
+              label: '没有找到页面',
+              schema: {},
+              show: false,
+              dirty: '',
+              id: '-'
+            })
+          );
+
+          document.title = '没有找到页面';
+          self.schema = {type: 'page', body: '没有找到页面'};
+
+          return '404';
+        }
       }
     });
 
-    function updateSchema(value: any) {
-      self.schema = value;
+    function updateSchema(id: any, value: any) {
+      if (self.isFirstLoad) {
+        self.isFirstLoad = false;
+        console.log('first load: ' + self.isFirstLoad);
+      } else {
+        if (id === self.pages[0].id) {
+          console.log('id: ' + id);
+          self.schema = value;
+          self.pages[0].updateSchema(value);
+          localStorage.setItem(id + '-schema', JSON.stringify(self.pages[0]));
+          localStorage.setItem(id + '-schema-dirty', '1');
+        }
+      }
     }
 
     function setPreview(value: boolean) {
@@ -215,45 +223,21 @@ export const MainStore = types
       self.isMobile = value;
     }
 
-    const loadPages = flow(function* () {
-      try {
-        const response = yield authenticatedFetch(
-          baseUrl + '/api/collections/Page/records?filter=ctype="page"'
-        );
-        const data = yield response.json();
-
-        self.pages.clear();
-        if (data.items && data.items.length > 0) {
-          for (let i = 0; i < data.items.length; i++) {
-            self.pages.push(
-              PageStore.create({
-                label: data.items[i].remark,
-                path: data.items[i].name,
-                schema: data.items[i].config,
-                show: data.items[i].show,
-                id: data.items[i].id
-              })
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch data', error);
-      }
-    });
+    function setIsModified(value: boolean) {
+      self.isModified = value;
+    }
 
     return {
       toggleAsideFolded,
       toggleAsideFixed,
       toggleOffScreen,
       setAddPageIsOpen,
-      addPage,
-      removePageAt,
       updatePageSchemaAt,
       updateSchema,
       setPreview,
       setIsMobile,
-      loadPages,
-      getPageById
+      getPageById,
+      setIsModified
     };
   });
 

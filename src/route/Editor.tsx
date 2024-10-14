@@ -33,25 +33,67 @@ export default inject('store')(
     const editorRef = useRef(null);
 
     useEffect(() => {
-      store.getPageById(match.params.id);
+      store
+        .getPageById(match.params.id, false)
+        .then(result => {
+          if (result == 'dirty') {
+            toast.warning(
+              '恢复到了上次未保存的状态！可以点击【重新加载】加载最新数据！'
+            );
+          } else if (result == 'loaded') {
+            toast.success('加载成功！');
+          } else if (result == '404') {
+            toast.error('没有对应的页面配置数据！');
+          }
+        })
+        .catch(() => {
+          toast.error('页面加载失败！');
+        });
     }, [store]);
 
     function save() {
-      store.updatePageSchemaAt(0);
-      toast.success('保存成功', '提示');
+      store
+        .updatePageSchemaAt(match.params.id)
+        .then(result => {
+          if (result) {
+            toast.success('保存成功！');
+            store.setIsModified(false);
+          } else {
+            toast.error('保存失败！');
+          }
+        })
+        .catch(error => {
+          toast.error('保存失败！');
+        });
+    }
+
+    function reloadJson() {
+      store
+        .getPageById(match.params.id, true)
+        .then(result => {
+          if (result == 'dirty') {
+            toast.warning(
+              '恢复到了上次未保存的状态！可以点击【重新加载】加载最新数据！'
+            );
+          } else if (result == 'loaded') {
+            toast.success('加载成功！');
+          } else if (result == '404') {
+            toast.error('没有对应的页面配置数据！');
+          }
+        })
+        .catch(() => {
+          toast.error('页面加载失败！');
+        });
     }
 
     function onChange(value: any) {
-      store.updateSchema(value);
+      store.updateSchema(match.params.id, value);
+      store.setIsModified(true);
     }
 
     function changeLocale(value: string) {
       localStorage.setItem('suda-i18n-locale', value);
       window.location.reload();
-    }
-
-    function exit() {
-      history.push(`/${store.pages[0].path}`);
     }
 
     function saveJson() {
@@ -65,7 +107,7 @@ export default inject('store')(
       <div className="Editor-Demo">
         {}
         <div className="Editor-header">
-          <div className="Editor-title">可视化编辑器</div>
+          <div className="Editor-title">可视化编辑器 {store.isModified && <span style={{color: 'red', marginLeft: '10px'}}>(已修改)</span>}</div>
           <div className="Editor-view-mode-group-container">
             <div className="Editor-view-mode-group">
               <div
@@ -111,6 +153,14 @@ export default inject('store')(
               {store.preview ? '编辑' : '预览'}
             </div>
             {!store.preview && (
+              <div
+                className={`header-action-btn exit-btn`}
+                onClick={reloadJson}
+              >
+                重新加载
+              </div>
+            )}
+            {!store.preview && (
               <div className={`header-action-btn exit-btn`} onClick={saveJson}>
                 保存
               </div>
@@ -119,7 +169,10 @@ export default inject('store')(
         </div>
         <div className="Editor-inner">
           <Editor
-            ref={editorRef}
+            ref={(editor) => {
+              // @ts-ignore
+              editorRef.current = editor;
+            }}
             theme={'cxd'}
             preview={store.preview}
             isMobile={store.isMobile}
@@ -128,7 +181,7 @@ export default inject('store')(
             onPreview={() => {
               store.setPreview(true);
             }}
-            $schemaUrl="../schema.json"
+            $schemaUrl="/pb-proxy/schema.json"
             onSave={save}
             className="is-fixed"
             showCustomRenderersPanel={true}

@@ -7,10 +7,7 @@ import {ToastComponent, AlertComponent, Spinner} from 'amis';
 import {Route, Switch, Redirect, HashRouter as Router} from 'react-router-dom';
 import {observer} from 'mobx-react';
 import {IMainStore} from '../store/index';
-// import Preview from './Preview';
-// import Editor from './Editor';
 import '../renderer/MyRenderer';
-const Preview = React.lazy(() => import('./Preview'));
 const Editor = React.lazy(() => import('./Editor'));
 const Page = React.lazy(() => import('./Page'));
 const NotFound = React.lazy(() => import('./NotFound'));
@@ -27,7 +24,6 @@ export default observer(function ({store}: {store: IMainStore}) {
           <Switch>
             <Route path="/page/:id" component={Page} />
             <Route path="/edit/:id" component={Editor} />
-            <Route path="/editor" component={Preview} />
             <Route component={NotFound} />
           </Switch>
         </React.Suspense>
