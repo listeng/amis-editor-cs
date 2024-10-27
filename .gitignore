@@ -67,3 +67,4 @@ gh-pages
 package-lock.json
 
 /amis-editor/**
+/page/**

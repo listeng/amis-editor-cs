@@ -10,14 +10,8 @@
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title></title>
-    <link
-      rel="stylesheet"
-      href="./css/iconfont/iconfont.css"
-    />
-    <link
-      rel="stylesheet"
-      href="./css/animate.min.css"
-    />
+    <link rel="stylesheet" href="./css/iconfont/iconfont.css" />
+    <link rel="stylesheet" href="./css/animate.min.css" />
     <script>
       function getUrlParams(url) {
         // 如果没有传入URL，就使用当前页面的URL
@@ -128,6 +122,49 @@
         }
 
         return null;
+      }
+
+      function buildForest(items) {
+        const nodeMap = new Map(items.map(item => [item.id, {...item}]));
+        const roots = items.filter(item => !item.pid || !nodeMap.has(item.pid));
+
+        for (const item of nodeMap.values()) {
+          if (item.pid && nodeMap.has(item.pid)) {
+            const parent = nodeMap.get(item.pid);
+            if (!parent.children) {
+              parent.children = [];
+            }
+            parent.children.push(item);
+            if (parent.children[0].sort !== undefined) {
+              parent.children.sort((a, b) => a.sort - b.sort);
+            }
+          }
+        }
+
+        if (roots[0]?.sort !== undefined) {
+          roots.sort((a, b) => a.sort - b.sort);
+        }
+
+        return roots.map(root => nodeMap.get(root.id));
+      }
+
+      function hasPermission(requiredPermissions, requireAll) {
+        const storedPermissions = localStorage.getItem('pb_permissions');
+        if (!storedPermissions) return false;
+
+        const userPermissions = JSON.parse(storedPermissions);
+
+        if (requireAll) {
+          // 需要拥有所有权限
+          return requiredPermissions.every(permission =>
+            userPermissions.includes(permission)
+          );
+        } else {
+          // 拥有其中一个权限即可
+          return requiredPermissions.some(permission =>
+            userPermissions.includes(permission)
+          );
+        }
       }
     </script>
   </head>

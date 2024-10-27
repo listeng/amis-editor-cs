@@ -27,6 +27,15 @@ html {
   visibility: visible;
 }
 
+.ai-button {
+  margin-right: 20px;
+  border: 0;
+}
+
+.ai-button:hover {
+  border: 0;
+}
+
 .a-Tabs--line > .a-Tabs-links > li > a:first-child {
   margin-right: 30px;
 }

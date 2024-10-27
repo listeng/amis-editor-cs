@@ -1,9 +1,9 @@
 import {types, getEnv, applySnapshot, getSnapshot, flow} from 'mobx-state-tree';
 import {PageStore} from './Page';
-import {when, reaction} from 'mobx';
-import { boolean } from 'mobx-state-tree/dist/internal';
-let pagIndex = 1;
-const baseUrl = 'http://127.0.0.1:8090/pb-proxy'; //'/pb-proxy';//'http://127.0.0.1:8090/pb-proxy';
+const baseUrl =
+  process.env.NODE_ENV === 'production'
+    ? '/pb-proxy'
+    : 'http://127.0.0.1:8090/pb-proxy';
 
 async function authenticatedFetch(
   url: string,
@@ -13,15 +13,10 @@ async function authenticatedFetch(
     body?: any;
   } = {}
 ) {
-  const authData = localStorage.getItem('pb_admin_auth');
-  let token = '';
-  if (authData) {
-    try {
-      const parsedData = JSON.parse(authData);
-      token = parsedData.token;
-    } catch (e) {
-      alert('没有登录');
-    }
+  // @ts-ignore
+  let token = getAuthToken();
+  if (token == null) {
+    alert('没有登录');
   }
 
   const headers = new Headers(options.headers || {});
@@ -108,7 +103,7 @@ export const MainStore = types
                 remark: data.label,
                 name: data.path,
                 show: data.show,
-                ctype: 'page',
+                ctype: data.ctype,
                 config: JSON.stringify(data.schema)
               })
             }
@@ -139,7 +134,6 @@ export const MainStore = types
       let dataLocal = localStorage.getItem(id + '-schema');
       let dataLocalDirty = localStorage.getItem(id + '-schema-dirty');
       if (dataLocal != null && dataLocalDirty == '1') {
-
         const result = JSON.parse(dataLocal);
 
         self.pages.clear();
@@ -168,6 +162,7 @@ export const MainStore = types
               path: result.name,
               schema: result.config,
               show: result.show,
+              ctype: result.ctype,
               dirty: '',
               id: result.id
             })
@@ -187,6 +182,7 @@ export const MainStore = types
               label: '没有找到页面',
               schema: {},
               show: false,
+              ctype: '',
               dirty: '',
               id: '-'
             })
@@ -203,10 +199,8 @@ export const MainStore = types
     function updateSchema(id: any, value: any) {
       if (self.isFirstLoad) {
         self.isFirstLoad = false;
-        console.log('first load: ' + self.isFirstLoad);
       } else {
         if (id === self.pages[0].id) {
-          console.log('id: ' + id);
           self.schema = value;
           self.pages[0].updateSchema(value);
           localStorage.setItem(id + '-schema', JSON.stringify(self.pages[0]));

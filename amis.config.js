@@ -1,6 +1,7 @@
 'use strict';
 const path = require('path');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+
 // 统一路径解析
 function resolve(dir) {
   return path.resolve(__dirname, dir);
@@ -12,7 +13,7 @@ module.exports = {
     // webpack的resolve配置
     resolve: {
       // 用于配置webpack在尝试过程中用到的后缀列表
-      extensions: ['.js', '.jsx', '.ts', '.tsx','.esm.js', '.umd.js', '.min.js', '.json', '.mjs'],
+      extensions: ['.js', '.jsx', '.ts', '.tsx', '.esm.js', '.umd.js', '.min.js', '.json', '.mjs'],
       alias: {
         '@': resolve('src'),
         // $function: resolve('src/function'),
@@ -65,13 +66,15 @@ module.exports = {
     },
     // 用于构建生产环境代码的相关配置信息
     NODE_ENV: 'production',
-    assetsRoot: resolve('./amis-editor'), // 打包后的文件绝对路径（物理路径）
+    assetsRoot: resolve('./page'), // 打包后的文件绝对路径（物理路径）
     assetsPublicPath: './', // 设置静态资源的引用路径（根域名+路径）
     assetsSubDirectory: '', // 资源引用二级路径
     productionSourceMap: false,
     productionGzip: false,
     productionGzipExtensions: ['js', 'css', 'json'],
-    plugins: [new MonacoWebpackPlugin()],
+    plugins: [
+      new MonacoWebpackPlugin(),
+    ],
     bundleAnalyzerReport: false,
   }
 };

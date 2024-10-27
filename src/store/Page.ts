@@ -6,6 +6,7 @@ export const PageStore = types
     path: '',
     label: '',
     show: true,
+    ctype: '',
     dirty: '',
     schema: types.frozen({})
   })

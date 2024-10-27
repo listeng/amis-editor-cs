@@ -3,6 +3,7 @@ import {Editor, ShortcutKey} from 'amis-editor';
 import {inject, observer} from 'mobx-react';
 import {RouteComponentProps} from 'react-router-dom';
 import {toast, Select} from 'amis';
+import {Button} from 'amis-ui';
 import {currentLocale} from 'i18n-runtime';
 import {Icon} from '../icons/index';
 import {IMainStore} from '../store';
@@ -107,7 +108,12 @@ export default inject('store')(
       <div className="Editor-Demo">
         {}
         <div className="Editor-header">
-          <div className="Editor-title">可视化编辑器 {store.isModified && <span style={{color: 'red', marginLeft: '10px'}}>(已修改)</span>}</div>
+          <div className="Editor-title">
+            可视化编辑器{' '}
+            {store.isModified && (
+              <span style={{color: 'red', marginLeft: '10px'}}>(已修改)</span>
+            )}
+          </div>
           <div className="Editor-view-mode-group-container">
             <div className="Editor-view-mode-group">
               <div
@@ -134,6 +140,14 @@ export default inject('store')(
           </div>
 
           <div className="Editor-header-actions">
+            <Button
+              onClick={() => {}}
+              type="button"
+              action="actionType"
+              className="ai-button"
+            >
+              <Icon icon="fas fa-star-of-david" title="AI助手" />
+            </Button>
             <ShortcutKey />
             <Select
               className="margin-left-space"
@@ -169,7 +183,7 @@ export default inject('store')(
         </div>
         <div className="Editor-inner">
           <Editor
-            ref={(editor) => {
+            ref={editor => {
               // @ts-ignore
               editorRef.current = editor;
             }}

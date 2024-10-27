@@ -6,6 +6,13 @@ import {MainStore} from './store/index';
 import RootRoute from './route/index';
 import copy from 'copy-to-clipboard';
 
+import { registerFunction } from 'amis-formula';
+
+registerFunction('hasPermission', (requiredPermissions, requireAll) => {
+  //@ts-ignore
+  return hasPermission(requiredPermissions, requireAll);
+});
+
 export default function (): JSX.Element {
   const store = ((window as any).store = MainStore.create(
     {},
@@ -13,7 +20,10 @@ export default function (): JSX.Element {
       fetcher: ({url, method, data, config, headers}: any) => {
         config = config || {};
         config.headers = config.headers || headers || {};
-        // config.withCredentials = true;
+
+        const targetUrl = process.env.NODE_ENV === 'production'
+        ? url
+        : 'http://127.0.0.1:8090' + url;
 
         // @ts-ignore
         config.headers['Authorization'] = getAuthToken();
@@ -25,7 +35,7 @@ export default function (): JSX.Element {
             config.params = data;
           }
 
-          resp = (axios as any)[method](url, config);
+          resp = (axios as any)[method](targetUrl, config);
         } else {
           if (data && data instanceof FormData) {
             config.headers['Content-Type'] = 'multipart/form-data';
@@ -39,7 +49,7 @@ export default function (): JSX.Element {
             config.headers['Content-Type'] = 'application/json';
           }
 
-          resp = (axios as any)[method](url, data, config);
+          resp = (axios as any)[method](targetUrl, data, config);
         }
 
         if (resp) {
@@ -83,8 +93,8 @@ export default function (): JSX.Element {
           : console.warn('[Notify]', type, msg);
         console.log('[notify]', type, msg);
       },
-      alert,
-      confirm,
+      alert: alert,
+      confirm: confirm,
       copy: (contents: string, options: any = {}) => {
         const ret = copy(contents, options);
         ret &&
