@@ -15,6 +15,8 @@ import {setDefaultTheme} from 'amis';
 import {setThemeConfig} from 'amis-editor-core';
 import themeConfig from 'amis-theme-editor-helper/lib/systemTheme/cxd';
 
+import 'leaflet/dist/leaflet.css';
+
 setDefaultTheme('cxd');
 setThemeConfig(themeConfig);
 

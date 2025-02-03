@@ -1,9 +1,11 @@
-import {registerEditorPlugin, BasePlugin} from 'amis-editor';
+import {
+  registerEditorPlugin,
+  BasePlugin,
+} from 'amis-editor';
 import {
   RendererEventContext,
   SubRendererInfo,
   BasicSubRenderInfo,
-  PluginInterface
 } from 'amis-editor';
 
 /**
@@ -15,7 +17,7 @@ import {
 const disabledRenderers = [
   // 'audio', // 音频
   // 'carousel', // 轮播图
-  'custom', // 自定义代码
+  'custom' // 自定义代码
   // 'log', // 日志
   // 'sparkline' // 走势图
 ];

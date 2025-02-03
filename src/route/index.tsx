@@ -7,7 +7,6 @@ import {ToastComponent, AlertComponent, Spinner} from 'amis';
 import {Route, Switch, Redirect, HashRouter as Router} from 'react-router-dom';
 import {observer} from 'mobx-react';
 import {IMainStore} from '../store/index';
-import '../renderer/MyRenderer';
 const Editor = React.lazy(() => import('./Editor'));
 const Page = React.lazy(() => import('./Page'));
 const NotFound = React.lazy(() => import('./NotFound'));

@@ -6,7 +6,7 @@ import {MainStore} from './store/index';
 import RootRoute from './route/index';
 import copy from 'copy-to-clipboard';
 
-import { registerFunction } from 'amis-formula';
+import {registerFunction} from 'amis-formula';
 
 registerFunction('hasPermission', (requiredPermissions, requireAll) => {
   //@ts-ignore
@@ -21,9 +21,10 @@ export default function (): JSX.Element {
         config = config || {};
         config.headers = config.headers || headers || {};
 
-        const targetUrl = process.env.NODE_ENV === 'production'
-        ? url
-        : 'http://127.0.0.1:8090' + url;
+        const targetUrl =
+          process.env.NODE_ENV === 'production'
+            ? url
+            : 'http://127.0.0.1:8090' + url;
 
         // @ts-ignore
         config.headers['Authorization'] = getAuthToken();
@@ -78,7 +79,7 @@ export default function (): JSX.Element {
                     total: payload.totalItems
                   };
                 } else {
-                  result.data = {};
+                  result.data = payload.data;
                 }
 
                 return {data: result};
@@ -89,7 +90,10 @@ export default function (): JSX.Element {
       isCancel: (e: any) => axios.isCancel(e),
       notify: (type: 'success' | 'error' | 'info', msg: string) => {
         toast[type]
-          ? toast[type](msg, type === 'error' ? '系统错误' : '系统消息')
+          ? toast[type](msg, {
+              title: type === 'error' ? '系统错误' : '系统消息',
+              position: 'top-center'
+            })
           : console.warn('[Notify]', type, msg);
         console.log('[notify]', type, msg);
       },
@@ -99,7 +103,7 @@ export default function (): JSX.Element {
         const ret = copy(contents, options);
         ret &&
           (!options || options.shutup !== true) &&
-          toast.info('内容已拷贝到剪切板');
+          toast.info('内容已拷贝到剪切板', {position: 'top-center'});
         return ret;
       }
     }

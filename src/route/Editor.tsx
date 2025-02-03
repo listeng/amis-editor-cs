@@ -9,6 +9,9 @@ import {Icon} from '../icons/index';
 import {IMainStore} from '../store';
 import '../editor/DisabledEditorPlugin'; // 用于隐藏一些不需要的Editor预置组件
 import '../renderer/MyRenderer';
+import '../renderer/LeafletRenderer';
+import '../editor/AiPlugin';
+import '../editor/LeafletControlPlugin';
 import '../editor/MyRenderer';
 
 const editorLanguages = [
@@ -39,16 +42,17 @@ export default inject('store')(
         .then(result => {
           if (result == 'dirty') {
             toast.warning(
-              '恢复到了上次未保存的状态！可以点击【重新加载】加载最新数据！'
+              '恢复到了上次未保存的状态！可以点击【重新加载】加载最新数据！',
+              {position: 'top-center'}
             );
           } else if (result == 'loaded') {
-            toast.success('加载成功！');
+            toast.success('加载成功！', {position: 'top-center'});
           } else if (result == '404') {
-            toast.error('没有对应的页面配置数据！');
+            toast.error('没有对应的页面配置数据！', {position: 'top-center'});
           }
         })
         .catch(() => {
-          toast.error('页面加载失败！');
+          toast.error('页面加载失败！', {position: 'top-center'});
         });
     }, [store]);
 
@@ -57,14 +61,14 @@ export default inject('store')(
         .updatePageSchemaAt(match.params.id)
         .then(result => {
           if (result) {
-            toast.success('保存成功！');
+            toast.success('保存成功！', {position: 'top-center'});
             store.setIsModified(false);
           } else {
-            toast.error('保存失败！');
+            toast.error('保存失败！', {position: 'top-center'});
           }
         })
         .catch(error => {
-          toast.error('保存失败！');
+          toast.error('保存失败！', {position: 'top-center'});
         });
     }
 
@@ -74,16 +78,17 @@ export default inject('store')(
         .then(result => {
           if (result == 'dirty') {
             toast.warning(
-              '恢复到了上次未保存的状态！可以点击【重新加载】加载最新数据！'
+              '恢复到了上次未保存的状态！可以点击【重新加载】加载最新数据！',
+              {position: 'top-center'}
             );
           } else if (result == 'loaded') {
-            toast.success('加载成功！');
+            toast.success('加载成功！', {position: 'top-center'});
           } else if (result == '404') {
-            toast.error('没有对应的页面配置数据！');
+            toast.error('没有对应的页面配置数据！', {position: 'top-center'});
           }
         })
         .catch(() => {
-          toast.error('页面加载失败！');
+          toast.error('页面加载失败！', {position: 'top-center'});
         });
     }
 
@@ -140,14 +145,6 @@ export default inject('store')(
           </div>
 
           <div className="Editor-header-actions">
-            <Button
-              onClick={() => {}}
-              type="button"
-              action="actionType"
-              className="ai-button"
-            >
-              <Icon icon="fas fa-star-of-david" title="AI助手" />
-            </Button>
             <ShortcutKey />
             <Select
               className="margin-left-space"
