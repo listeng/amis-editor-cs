@@ -79,7 +79,11 @@ export default function (): JSX.Element {
                     total: payload.totalItems
                   };
                 } else {
-                  result.data = payload.data;
+                  if (payload.data !== undefined) {
+                    result.data = payload.data;
+                  } else {
+                    result.data = payload;
+                  }
                 }
 
                 return {data: result};
